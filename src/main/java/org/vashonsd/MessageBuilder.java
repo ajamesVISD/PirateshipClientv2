@@ -1,5 +1,6 @@
 package org.vashonsd;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -9,17 +10,25 @@ import java.util.Map;
  */
 public class MessageBuilder {
     Map<String, String> defaults;
+    String defaultUser;
 
-    public Message write(String text) {
+    public Message build(String text) {
         Message msg = new Message();
+        defaults = new HashMap<String, String>();
         for(String k : defaults.keySet()) {
             msg.put(k, defaults.get(k));
         }
+        msg.setUsername(defaultUser);
         msg.setBody(text);
         return msg;
     }
 
     public void setUsername(String username) {
-        defaults.put("username", username);
+        defaultUser = username;
+    }
+
+    public MessageBuilder withUsername(String str) {
+        setUsername(str);
+        return this;
     }
 }

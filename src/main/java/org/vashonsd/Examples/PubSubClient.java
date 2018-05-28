@@ -1,4 +1,4 @@
-package org.vashonsd.PubSubClient;
+package org.vashonsd.Examples;
 
 import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.auth.oauth2.GoogleCredentials;

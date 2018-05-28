@@ -12,7 +12,17 @@ public class Message {
     Map<String, String> valueStore;
     String body;
     Timestamp timestamp;
+    String username;
 
+    boolean isAuthenticated;
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
 
     public Message() {
         valueStore = new HashMap<String, String>();
@@ -37,5 +47,17 @@ public class Message {
 
     public void setBody(String body) {
         this.body = body;
+    }
+
+    public static MessageBuilder fromBuilder() {
+        return new MessageBuilder();
+    }
+
+    public boolean isAuthenticated() {
+        return isAuthenticated;
+    }
+
+    public void setAuthenticated(boolean authenticated) {
+        isAuthenticated = authenticated;
     }
 }
