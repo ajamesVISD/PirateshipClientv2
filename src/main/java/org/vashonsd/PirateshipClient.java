@@ -1,36 +1,31 @@
 package org.vashonsd;
 
-import org.vashonsd.Input.Reader;
-import org.vashonsd.Output.Writer;
-import org.vashonsd.Request.Producer;
-import org.vashonsd.Response.Consumer;
-import org.vashonsd.Services.PubsubService;
+import org.vashonsd.IO.Input;
+import org.vashonsd.IO.Output;
+import org.vashonsd.IO.Publisher;
+import org.vashonsd.IO.Subscriber;
+import org.vashonsd.Services.Reader;
+import org.vashonsd.Services.Writer;
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingDeque;
+import java.io.IOException;
+import java.util.Properties;
+import java.util.UUID;
+import java.util.concurrent.*;
 
 /**
  * Created by andy on 5/24/18.
  */
 public class PirateshipClient implements Runnable {
 
-    private Producer requestProducer;
-    private Consumer responseConsumer;
+    private final Input input;
+    private Publisher publisher;
+    private Subscriber subscriber;
+    private Output output;
 
-    private org.vashonsd.Output.Writer outputWriter;
-    private org.vashonsd.Input.Reader inputReader;
+    private Properties properties;
 
-    private final BlockingQueue<Message> responses = new LinkedBlockingDeque<>();
-    private final BlockingQueue<Message> requests = new LinkedBlockingDeque<>();
-
-    private final BlockingQueue<String> inStrings = new LinkedBlockingDeque<>();
-    private final BlockingQueue<String> outStrings = new LinkedBlockingDeque<>();
-
-    private String username;
-    private boolean running;
-    private MessageBuilder messageBuilder;
+    private String uuid;
+    private volatile boolean running;
 
     /**
       * A PirateshipClient handles communications with the PubSub server.
@@ -39,88 +34,97 @@ public class PirateshipClient implements Runnable {
       * The specifics of how this happens are up to the implementation.
       *
       */
-    public PirateshipClient(Reader inputReader,
-                            Writer outputWriter,
-                            Consumer responseConsumer,
-                            Producer requestProducer) {
-        this.inputReader = inputReader;
-        inputReader.manage(inStrings);
-        this.outputWriter = outputWriter;
-        outputWriter.observe(outStrings);
+    public PirateshipClient(Input input,
+                            Output output,
+                            Writer writer,
+                            Reader reader,
+                            Properties properties) {
+        this.properties = properties;
 
-        this.responseConsumer = responseConsumer;
-        responseConsumer.manage(responses);
-        this.requestProducer = requestProducer;
-        requestProducer.observe(requests);
+        this.output = output;
+        this.input = input;
+        this.input.setUuid(properties.getProperty("username"));
 
-        messageBuilder = new MessageBuilder();
+        this.subscriber = Subscriber.fromBuilder()
+            .withReader(reader)
+            .withOutput(output)
+            .withUuid(properties.getProperty("username"))
+            .build();
+        this.publisher = Publisher.fromBuilder()
+                .withInput(input)
+                .withWriter(writer)
+                .build();
     }
 
-    public static PirateshipClientBuilder fromBuilder() {
-        return new PirateshipClientBuilder();
-    }
-
-    public Producer getRequestProducer() {
-        return requestProducer;
-    }
-
-    public void setRequestProducer(Producer requestProducer) {
-        this.requestProducer = requestProducer;
-    }
-
-    public Consumer getResponseConsumer() {
-        return responseConsumer;
-    }
-
-    public void setResponseConsumer(Consumer responseConsumer) {
-        this.responseConsumer = responseConsumer;
-    }
     //    runnable.terminate();
     //    thread.join();
     @Override
     public void run() {
         running = true;
         ExecutorService pool = Executors.newFixedThreadPool(4);
-        pool.execute(requestProducer);
-        pool.execute(responseConsumer);
-        pool.execute(outputWriter);
-        pool.execute(inputReader);
+        pool.execute(publisher);
+        pool.execute(subscriber);
 
-        String input;
-        Message resp;
-        try {
-            outStrings.put("Starting...");
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
         while(running) {
-            //Check the inputStrings to see if something has come in from our system in.
-            if((input = inStrings.poll()) != null) {
-                try {
-                    requests.put(messageBuilder.build(input));
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
 
-            if((resp = responses.poll()) != null) {
-                try {
-                    outStrings.put(resp.getBody());
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
         }
     }
 
-    public void setPubsubService(PubsubService service) {
-        requestProducer.setPubsubService(service);
-        responseConsumer.setPubsubService(service);
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+        subscriber.setTopic(uuid);
     }
 
-    public void setUsername(String username) {
-        this.username = username;
-        messageBuilder.setUsername(username);
-        responseConsumer.setTopic(username);
+    public static PirateshipClient.Builder fromBuilder() {
+        return new PirateshipClient.Builder();
+    }
+
+    public static final class Builder {
+        private Input input;
+        private Output output;
+        private String uuid;
+        private Writer writer;
+        private Reader reader;
+        private Properties properties;
+
+        public Builder withInput(Input r) {
+            input = r;
+            return this;
+        }
+
+        public Builder withOutput(Output w) {
+            output = w;
+            return this;
+        }
+
+        public Builder withWriter(Writer w) {
+            this.writer = w;
+            return this;
+        }
+
+        public Builder withReader(Reader r) {
+            this.reader = r;
+            return this;
+        }
+
+        public Builder withUuid(String str) {
+            uuid = str;
+            return this;
+        }
+
+        public Builder withRandomUsername() {
+            uuid = UUID.randomUUID().toString();
+            return this;
+        }
+
+        public Builder withProperties(Properties p) {
+            this.properties = p;
+            return this;
+        }
+
+        public PirateshipClient build() {
+            PirateshipClient pc = new PirateshipClient(input, output, writer, reader, properties);
+            return pc;
+        }
     }
 }

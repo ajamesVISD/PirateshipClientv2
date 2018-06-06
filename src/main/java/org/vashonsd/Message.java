@@ -12,16 +12,16 @@ public class Message {
     Map<String, String> valueStore;
     String body;
     Timestamp timestamp;
-    String username;
+    String uuid;
 
     boolean isAuthenticated;
 
-    public String getUsername() {
-        return username;
+    public String getUuid() {
+        return uuid;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 
     public Message() {
@@ -49,8 +49,8 @@ public class Message {
         this.body = body;
     }
 
-    public static MessageBuilder fromBuilder() {
-        return new MessageBuilder();
+    public static Builder fromBuilder() {
+        return new Builder();
     }
 
     public boolean isAuthenticated() {
@@ -59,5 +59,48 @@ public class Message {
 
     public void setAuthenticated(boolean authenticated) {
         isAuthenticated = authenticated;
+    }
+
+    /**
+     * This class automates create a message with the given properties. For instance, we do not want to set the uuid
+     * property of the Message every time we send it. Instead, we could create a Builder with its defaults set,
+     * then call builder.write("The body of the message.").
+     */
+    public static final class Builder {
+        Map<String, String> defaults;
+        String defaultUuid;
+        String body;
+        private boolean isAuthenticated;
+
+        public Message build() {
+            Message msg = new Message();
+            defaults = new HashMap<String, String>();
+            for(String k : defaults.keySet()) {
+                msg.put(k, defaults.get(k));
+            }
+            msg.setUuid(defaultUuid);
+            msg.isAuthenticated = isAuthenticated;
+            msg.setBody(body);
+            return msg;
+        }
+
+        public void setUuid(String str) {
+            this.defaultUuid = str;
+        }
+
+        public Builder withUuid(String str) {
+            defaultUuid = str;
+            return this;
+        }
+
+        public Builder withBody(String str) {
+            body = str;
+            return this;
+        }
+
+        public Builder setAuthentication(boolean a) {
+            isAuthenticated = true;
+            return this;
+        }
     }
 }

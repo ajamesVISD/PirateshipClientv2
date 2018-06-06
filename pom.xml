@@ -45,5 +45,10 @@
             <artifactId>google-api-services-people</artifactId>
             <version>v1-rev288-1.23.0</version>
         </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>RELEASE</version>
+        </dependency>
     </dependencies>
 </project>

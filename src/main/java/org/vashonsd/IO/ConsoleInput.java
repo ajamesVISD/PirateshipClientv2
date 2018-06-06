@@ -1,26 +1,34 @@
-package org.vashonsd.Input;
+package org.vashonsd.IO;
 
 import org.vashonsd.Message;
-import org.vashonsd.MessageBuilder;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
 
-public class ConsoleReader implements Reader {
+public class ConsoleInput implements Input {
 
     private final BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
-    private BlockingQueue<String> outboundRequests;
+    private BlockingQueue<String> stringsFromInput;
     private boolean running;
+    private String uuid;
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    public ConsoleInput() {
+        stringsFromInput = new LinkedBlockingDeque<>();
+    }
 
     @Override
     public void run() {
         running = true;
         while(running) {
             try {
-                outboundRequests.offer(in.readLine());
+                stringsFromInput.offer(in.readLine());
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -32,9 +40,18 @@ public class ConsoleReader implements Reader {
         }
     }
 
+
     @Override
-    public void manage(BlockingQueue<String> queue) {
-        outboundRequests = queue;
+    public Message read() {
+        String str;
+        if((str = stringsFromInput.poll()) != null) {
+            return Message.fromBuilder()
+                    .withUuid(uuid)
+                    .withBody(str)
+                    .build();
+        } else {
+            return null;
+        }
     }
 
     @Override

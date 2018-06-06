@@ -1,15 +1,22 @@
-package org.vashonsd.Output;
+package org.vashonsd.IO;
+
+import org.vashonsd.Message;
 
 import java.util.concurrent.BlockingQueue;
 
-public class ConsoleWriter implements Writer {
+public class ConsoleOutput implements Output {
 
-    private boolean running;
+    private volatile boolean running;
     private BlockingQueue<String> outboundStrings;
 
     @Override
     public void stop() {
         running = false;
+    }
+
+    @Override
+    public void write(Message m) {
+        System.out.println(m.getBody());
     }
 
     @Override
@@ -22,11 +29,8 @@ public class ConsoleWriter implements Writer {
         running = true;
         String msg;
         while(running) {
-            try {
-                msg = outboundStrings.take();
+            if((msg = outboundStrings.poll()) != null) {
                 System.out.println(msg);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
             }
         }
     }
