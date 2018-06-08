@@ -1,4 +1,4 @@
-package org.vashonsd.Services;
+package org.vashonsd.IO.Services;
 
 import com.google.api.core.ApiService.Listener;
 import com.google.api.gax.core.FixedCredentialsProvider;
@@ -16,7 +16,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 
 /**
- * The ReaderService pulls from the correct Pub/Sub project + subscription and puts what it gets on the queue.
+ * GooglePubSubReader interacts with Google PubSub, pulling messages as they become available and putting them on the internal queue.
+ *
+ * Other classes can call the read() method to either get a Message or null.
  */
 public class GooglePubSubReader implements Reader {
 
@@ -31,7 +33,7 @@ public class GooglePubSubReader implements Reader {
 
         @Override
         public void receiveMessage(PubsubMessage message, AckReplyConsumer consumer) {
-            System.out.println("The MessageReceiver sees: " + message.getData().toString());
+//            System.out.println("The MessageReceiver sees: " + message.getData().toString());
             messages.offer(message);
             consumer.ack();
         }
@@ -54,8 +56,8 @@ public class GooglePubSubReader implements Reader {
 
         subscriber.addListener(
                 new Listener() {
-                    public void failed(Subscriber.State from, Throwable failuer) {
-                        System.out.println("Failure in Input pool: " + from);
+                    public void failed(Subscriber.State from, Throwable failure) {
+                        System.out.println("Failure in Reader pool: " + from);
                     }
                 },
         pool);
@@ -66,7 +68,7 @@ public class GooglePubSubReader implements Reader {
     public Message read() {
         PubsubMessage pmsg;
         if((pmsg = messages.poll()) != null) {
-            System.out.println("The read() method in the Input sees: " + pmsg.getData().toString());
+//            System.out.println("The read() method in the Reader sees: " + pmsg.getData().toString());
             return Message.fromBuilder()
                     .withUuid(pmsg.getAttributesMap().get("uuid"))
                     .withBody(pmsg.getData().toStringUtf8())

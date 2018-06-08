@@ -1,12 +1,13 @@
 package org.vashonsd.IO;
 
 import org.vashonsd.Message;
-import org.vashonsd.Services.Reader;
+import org.vashonsd.IO.Services.Reader;
 
 /**
- * Subscriber pulls messages from the remote writer and turns them into Messages, which go onto the queue.
+ * Subscriber pulls messages from the remote Writer sends them to Output.
  *
- * Supply instances with both the writer adapter and the queue.
+ * A plausible architecture could use a queue as a go-between for asynchronous operation.
+ * As written, it send directly.
  */
 public class Subscriber implements Runnable {
 

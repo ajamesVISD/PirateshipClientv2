@@ -1,8 +1,15 @@
 package org.vashonsd.IO;
 
 import org.vashonsd.Message;
-import org.vashonsd.Services.Writer;
+import org.vashonsd.IO.Services.Writer;
 
+/**
+ * A Publisher needs an Input (such as console) and a Writer to an external service (e.g., pubsub).
+ *
+ * The Input is run in its own thread and the Writer encapsulates its own thread.
+ *
+ * The Input is polled for new input, which is sent via the Writer to the external service.
+ */
 public class Publisher implements Runnable {
 
     private volatile boolean running;
