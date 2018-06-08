@@ -4,14 +4,15 @@ import org.vashonsd.Message;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 
 public class ConsoleInput implements Input {
 
-    private final BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
-    private BlockingQueue<String> stringsFromInput;
+    private final InputStream sysIn = System.in;
+    private final BufferedReader in = new BufferedReader(new InputStreamReader(sysIn));
     private boolean running;
     private String uuid;
 
@@ -19,44 +20,22 @@ public class ConsoleInput implements Input {
         this.uuid = uuid;
     }
 
-    public ConsoleInput() {
-        stringsFromInput = new LinkedBlockingDeque<>();
-    }
-
-    @Override
-    public void run() {
-        running = true;
-        while(running) {
-            try {
-                stringsFromInput.offer(in.readLine());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        try {
-            in.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-
     @Override
     public Message read() {
         String str;
-        if((str = stringsFromInput.poll()) != null) {
-            return Message.fromBuilder()
-                    .withUuid(uuid)
-                    .withBody(str)
-                    .build();
-        } else {
+        try {
+            if(sysIn.available() > 0) {
+                str = in.readLine();
+                return Message.fromBuilder()
+                        .withUuid(uuid)
+                        .withBody(str)
+                        .build();
+            } else {
+                return null;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
             return null;
         }
     }
-
-    @Override
-    public void stop() {
-        running = false;
-    }
-
 }

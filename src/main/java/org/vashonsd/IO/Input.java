@@ -2,11 +2,9 @@ package org.vashonsd.IO;
 
 import org.vashonsd.Message;
 
-public interface Input extends Runnable {
+public interface Input {
 
     void setUuid(String str);
 
     public Message read();
-
-    public void stop();
 }

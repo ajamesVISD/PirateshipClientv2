@@ -26,8 +26,6 @@ public class Publisher implements Runnable {
 
     @Override
     public void run() {
-        Thread readerThread = new Thread(input);
-        readerThread.start();
         running = true;
         Message msg;
         while (running) {
